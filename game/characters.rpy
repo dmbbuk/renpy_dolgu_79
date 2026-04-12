@@ -18,3 +18,14 @@ define npc = Character('NPC', color="#ffcccc")
 
 # 5. 이름 없는 서술 (Narrator)
 # 렌파이 기본 narrator를 그대로 사용하면 됩니다. (별도 정의 불필요)
+
+# 타이핑 소리 콜백
+init python:
+    def typewriter_callback(event, interact=True, **kwargs):
+        if event == "begin":
+            if renpy.loadable("audio/type.wav"):
+                renpy.music.play("<loop 0>audio/type.wav", channel="typing", loop=True)
+        elif event in ("slow_done", "end"):
+            renpy.music.stop(channel="typing", fadeout=0.05)
+
+    config.character_callback = typewriter_callback
