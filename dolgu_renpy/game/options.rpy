@@ -66,9 +66,9 @@ define config.has_voice = True
 
 init python:
     def _typing_sound_callback(event, interact=True, **kwargs):
-        if event == "slow_begin":
+        if event == "begin":
             renpy.sound.play("audio/typing.mp3", loop=True)
-        elif event in ("slow_done", "end"):
+        elif event == "end":
             renpy.sound.stop()
 
     config.character_callback = _typing_sound_callback

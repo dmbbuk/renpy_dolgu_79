@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ffmpeg -version)",
+      "PowerShell(where.exe ffmpeg 2>$null; \\(Get-Command ffmpeg -ErrorAction SilentlyContinue\\).Source)",
+      "PowerShell(winget --version 2>$null)",
+      "PowerShell(python --version 2>$null)"
+    ]
+  }
+}
