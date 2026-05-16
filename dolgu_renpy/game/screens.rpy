@@ -97,21 +97,26 @@ screen say(who, what):
 
     window:
         id "window"
+        xpos 0.5
+        xanchor 0.5
+        ypos 0.5
+        yanchor 0.5
+        xsize 1200
+        background None
+        padding (60, 40, 60, 40)
 
-        if who is not None:
+        vbox:
+            xalign 0.5
+            spacing 15
 
-            window:
-                id "namebox"
-                style "namebox"
-                text who id "who"
+            if who is not None:
+                window:
+                    id "namebox"
+                    style "namebox"
+                    xalign 0.5
+                    text who id "who"
 
-        text what id "what"
-
-
-    ## 사이드 이미지가 있는 경우 글자 위에 표시합니다. 휴대폰 환경에서는 보이지
-    ## 않습니다.
-    if not renpy.variant("small"):
-        add SideImage() xalign 0.0 yalign 1.0
+            text what id "what"
 
 
 ## Character 객체를 통해 스타일을 지정할 수 있도록 namebox를 사용할 수 있게 만듭
@@ -129,12 +134,7 @@ style namebox_label is say_label
 
 
 style window:
-    xalign 0.5
-    xfill True
-    yalign gui.textbox_yalign
-    ysize gui.textbox_height
-
-    background Image("gui/textbox.png", xalign=0.5, yalign=1.0)
+    background None
 
 style namebox:
     xpos gui.name_xpos
@@ -153,10 +153,8 @@ style say_label:
 
 style say_dialogue:
     properties gui.text_properties("dialogue")
-
-    xpos gui.dialogue_xpos
-    xsize gui.dialogue_width
-    ypos gui.dialogue_ypos
+    text_align 0.5
+    xalign 0.5
 
     adjust_spacing False
 
