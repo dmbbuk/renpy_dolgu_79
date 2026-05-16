@@ -62,16 +62,6 @@ define config.has_voice = True
 # define config.main_menu_music = "main-menu-theme.ogg"
 
 
-## 타이핑 사운드 ##################################################################
-
-init python:
-    def _typing_sound_callback(event, interact=True, **kwargs):
-        if event == "begin":
-            renpy.sound.play("audio/typing.mp3", loop=True)
-        elif event == "end":
-            renpy.sound.stop()
-
-    config.character_callback = _typing_sound_callback
 
 
 ## 번역 ##########################################################################
@@ -128,11 +118,7 @@ define config.window_hide_transition = Dissolve(.2)
 ## 기본 글자 속도를 제어합니다. 기본적으로, 0은 즉시이며 다른 숫자는 초당 입력
 ## 할 문자 수입니다.
 
-<<<<<<< HEAD:dolgu_renpy/game/options.rpy
 default preferences.text_cps = 40
-=======
-default preferences.text_cps = 1
->>>>>>> feature/Juno:game/options.rpy
 
 
 ## 기본 auto-forward 지연 시간입니다. 숫자가 클수록 대기 시간이 길어지며, 0 ~ 30

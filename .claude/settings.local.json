@@ -4,7 +4,9 @@
       "Bash(ffmpeg -version)",
       "PowerShell(where.exe ffmpeg 2>$null; \\(Get-Command ffmpeg -ErrorAction SilentlyContinue\\).Source)",
       "PowerShell(winget --version 2>$null)",
-      "PowerShell(python --version 2>$null)"
+      "PowerShell(python --version 2>$null)",
+      "PowerShell(winget install ffmpeg --accept-package-agreements --accept-source-agreements)",
+      "PowerShell($env:PATH = [System.Environment]::GetEnvironmentVariable\\(\"PATH\", \"Machine\"\\) + \";\" + [System.Environment]::GetEnvironmentVariable\\(\"PATH\", \"User\"\\); ffmpeg -i \"c:\\\\01.project\\\\dolgu_renpy\\\\dolgu_renpy\\\\game\\\\audio\\\\typing.mp3\" 2>&1 | Select-String \"Duration\")"
     ]
   }
 }

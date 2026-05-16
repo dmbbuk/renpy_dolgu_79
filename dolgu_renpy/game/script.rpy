@@ -1,28 +1,45 @@
-﻿# 이 파일에 게임 스크립트를 입력합니다.
+init python:
+    import random
 
-# image 문을 사용해 이미지를 정의합니다.
-# image eileen happy = "eileen_happy.png"
+    _typing_clips = [
+        "audio/typing1.mp3",
+        "audio/typing2.mp3",
+        "audio/typing3.mp3",
+        "audio/typing4.mp3",
+        "audio/typing5.mp3",
+    ]
 
-# 게임에서 사용할 캐릭터를 정의합니다.
-# (characters.rpy에서 불러오므로 여기서는 생략합니다)
+    def play_typing():
+        renpy.sound.play(random.choice(_typing_clips))
 
-# 여기에서부터 게임이 시작합니다.
+screen click_type_screen(text):
+    text text:
+        xalign 0.5
+        yalign 0.5
+        xsize 1400
+        text_align 0.0
+
+label click_type(fulltext):
+    # 1) 타이핑: 클릭마다 한 글자씩 등장
+    $ i = 0
+    while i < len(fulltext):
+        $ i += 1
+        show screen click_type_screen(fulltext[:i])
+        $ play_typing()
+        pause
+    # 2) 지우기: 클릭마다 최근 글자부터 한 글자씩 삭제
+    while i > 0:
+        $ i -= 1
+        show screen click_type_screen(fulltext[:i])
+        $ play_typing()
+        pause
+    hide screen click_type_screen
+    return
+
 label start:
 
-    "튜토리얼"
+    call click_type("모든 작가는 글을 쓰려는 힘과\n글을 지우려는 힘을 동시에 지니고 있다.")
 
-    "마지막 문장입니다. R 버튼을 눌러 시집을 다시 읽으세요."
+    call click_type("대부분의 작가에게는\n지우려는 힘이 더 강하다.")
 
-    "마지막 문장입니다. R 버튼을 눌러 시집을 다시 읽으세요."
-
-    "마지막 문장입니다. R 버튼을 눌러 시집을 다시 읽으세요."
-    
-    ""
-
-    "미안하오."
-
-    "시가 좋아서 계속 누르고 있었소."
-
-    "(그가 뒷걸음질 친다)"
-    
     return
