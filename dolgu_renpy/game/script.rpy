@@ -22,6 +22,11 @@ init python:
     ERASE_FAST = 2.0    # 빠르게
     ERASE_VFAST = 1.0   # 아주 빠르게
 
+    # ─ 폰트 ─
+    # Heavy = 나레이션(3인칭 서술), Medium = 화자(1인칭 대화체)
+    FONT_HEAVY = "fonts/SourceHanSerif-Heavy.ttc"
+    FONT_MEDIUM = "fonts/SourceHanSerif-Medium.ttc"
+
     def play_typing():
         # 단일 타격 (한 글자씩 모드)
         renpy.sound.play(random.choice(_typing_clips))
@@ -68,14 +73,14 @@ init python:
                 chunks.append(current)
         return [c for c in chunks if c.strip()]
 
-    def auto_type(target, cps=SPEED_NORMAL, sound=True, layout="center"):
+    def auto_type(target, cps=SPEED_NORMAL, sound=True, layout="center", font=FONT_MEDIUM):
         # 현재 텍스트 → target 으로 한 글자씩 자동 전이 (클릭 없음, 공백 스킵).
         # 공통 접두사 이후를 뒤에서부터 삭제 → target 의 나머지를 타이핑.
         cp = _common_prefix_len(store.current_text, target)
         while len(store.current_text) > cp:
             removed = store.current_text[-1]
             store.current_text = store.current_text[:-1]
-            renpy.show_screen("typewriter_screen", store.current_text, layout=layout)
+            renpy.show_screen("typewriter_screen", store.current_text, layout=layout, font=font)
             if removed == " ":
                 continue
             if sound:
@@ -84,29 +89,29 @@ init python:
         while len(store.current_text) < len(target):
             next_c = target[len(store.current_text)]
             store.current_text = target[: len(store.current_text) + 1]
-            renpy.show_screen("typewriter_screen", store.current_text, layout=layout)
+            renpy.show_screen("typewriter_screen", store.current_text, layout=layout, font=font)
             if next_c == " ":
                 continue
             if sound:
                 play_typing()
             renpy.pause(1.0 / cps, hard=True)
 
-    def auto_type_sentences(target, cps=SPEED_NORMAL, sound=True, layout="center"):
+    def auto_type_sentences(target, cps=SPEED_NORMAL, sound=True, layout="center", font=FONT_MEDIUM):
         # target 으로 자동 전이 + 추가되는 텍스트를 마침표 단위로 끊어 청크 끝마다 클릭 대기.
         cp = _common_prefix_len(store.current_text, target)
         # 1) 공통 접두사까지 자동 삭제 (클릭 없음)
         if len(store.current_text) > cp:
-            auto_type(store.current_text[:cp], cps=cps, sound=sound, layout=layout)
+            auto_type(store.current_text[:cp], cps=cps, sound=sound, layout=layout, font=font)
         # 2) 추가 부분을 청크별로 자동 타이핑 + 청크 끝 클릭
         to_add = target[cp:]
         chunks = _split_chunks(to_add)
         accumulated = store.current_text
         for chunk in chunks:
             accumulated += chunk
-            auto_type(accumulated, cps=cps, sound=sound, layout=layout)
+            auto_type(accumulated, cps=cps, sound=sound, layout=layout, font=font)
             renpy.pause()
 
-    def erase_in(target, seconds, sound=True, layout="center"):
+    def erase_in(target, seconds, sound=True, layout="center", font=FONT_MEDIUM):
         # 현재 텍스트 → target 까지 총 seconds 안에 자동 전이 (삭제 + 추가 통합).
         cp = _common_prefix_len(store.current_text, target)
         change = (
@@ -116,16 +121,16 @@ init python:
         if change <= 0:
             return
         cps = change / max(seconds, 0.01)
-        auto_type(target, cps=cps, sound=sound, layout=layout)
+        auto_type(target, cps=cps, sound=sound, layout=layout, font=font)
 
-    def output_by_sentence(text, layout="center"):
+    def output_by_sentence(text, layout="center", font=FONT_MEDIUM):
         # "연출 없음" 슬라이드용. 마침표 단위 청크 통째로 출력 + 버스트 사운드.
         chunks = _split_chunks(text)
         accumulated = store.current_text
         for chunk in chunks:
             accumulated += chunk
             store.current_text = accumulated
-            renpy.show_screen("typewriter_screen", store.current_text, layout=layout)
+            renpy.show_screen("typewriter_screen", store.current_text, layout=layout, font=font)
             burst_count = max(3, min(len(chunk) // 4, 10))
             play_typing_burst(burst_count)
             renpy.pause()
@@ -149,19 +154,30 @@ init python:
 
 default current_text = ""
 
-screen typewriter_screen(text, layout="center"):
+image pic_01 = "images/Pic_01.png"
+
+screen typewriter_screen(text, layout="center", font=FONT_MEDIUM):
     if layout == "right":
         text text:
             xalign 0.75
             yalign 0.5
             xsize 900
             text_align 0.0
+            font font
+    elif layout == "bottom":
+        text text:
+            xalign 0.5
+            yalign 0.9
+            xsize 1400
+            text_align 0.5
+            font font
     else:
         text text:
             xalign 0.5
             yalign 0.5
             xsize 1400
             text_align 0.0
+            font font
 
 
 label start:
@@ -169,24 +185,24 @@ label start:
     $ quick_menu = False  #하단 옵션 삭제
     show screen typewriter_screen("")
 
-    # ───── 슬라이드 2~4 (연출: 한 글자씩 → 한 글자씩 삭제, 보통 속도) ─────
-    $ auto_type_sentences("모든 작가는 글을 쓰려는 힘과\n글을 지우려는 힘을 동시에 지니고 있다.", cps=SPEED_NORMAL)
-    $ erase_in("", ERASE_NORMAL)
-    $ auto_type_sentences("대부분의 작가에게는\n지우려는 힘이 더 강하다.", cps=SPEED_NORMAL)
-    $ erase_in("", ERASE_NORMAL)
-    $ auto_type_sentences("그건 자신의 미숙함을 들키지 않는다는\n점에서 최악은 아니다.", cps=SPEED_NORMAL)
-    $ erase_in("", ERASE_NORMAL)
+    # ───── 슬라이드 2~4 (나레이션: Heavy / 연출: 한 글자씩 → 한 글자씩 삭제, 보통 속도) ─────
+    $ auto_type_sentences("모든 작가는 글을 쓰려는 힘과\n글을 지우려는 힘을 동시에 지니고 있다.", cps=SPEED_NORMAL, font=FONT_HEAVY)
+    $ erase_in("", ERASE_NORMAL, font=FONT_HEAVY)
+    $ auto_type_sentences("대부분의 작가에게는\n지우려는 힘이 더 강하다.", cps=SPEED_NORMAL, font=FONT_HEAVY)
+    $ erase_in("", ERASE_NORMAL, font=FONT_HEAVY)
+    $ auto_type_sentences("그건 자신의 미숙함을 들키지 않는다는\n점에서 최악은 아니다.", cps=SPEED_NORMAL, font=FONT_HEAVY)
+    $ erase_in("", ERASE_NORMAL, font=FONT_HEAVY)
 
-    # ───── 슬라이드 5~7 (연출: 부분 삭제 반복 — "최악은 역시" 유지) ─────
-    $ auto_type_sentences("최악은 역시, 형편없는 작품을\n미처 지우지도 못하고 계속 써내려 가는 것.", cps=SPEED_NORMAL)
-    $ erase_in("최악은 역시", ERASE_NORMAL)
-    $ auto_type_sentences("최악은 역시, 형편없는 작품을\n미처 지우지도", cps=SPEED_NORMAL)
-    $ erase_in("최악은 역시", ERASE_NORMAL)
-    $ auto_type_sentences("최악은 역시, 형편없는 작품", cps=SPEED_NORMAL)
-    $ erase_in("", ERASE_NORMAL)
+    # ───── 슬라이드 5~7 (나레이션: Heavy / 연출: 부분 삭제 반복 — "최악은 역시" 유지) ─────
+    $ auto_type_sentences("최악은 역시, 형편없는 작품을\n미처 지우지도 못하고 계속 써내려 가는 것.", cps=SPEED_NORMAL, font=FONT_HEAVY)
+    $ erase_in("최악은 역시", ERASE_NORMAL, font=FONT_HEAVY)
+    $ auto_type_sentences("최악은 역시, 형편없는 작품을\n미처 지우지도", cps=SPEED_NORMAL, font=FONT_HEAVY)
+    $ erase_in("최악은 역시", ERASE_NORMAL, font=FONT_HEAVY)
+    $ auto_type_sentences("최악은 역시, 형편없는 작품", cps=SPEED_NORMAL, font=FONT_HEAVY)
+    $ erase_in("", ERASE_NORMAL, font=FONT_HEAVY)
 
-    # ───── 슬라이드 8 (연출: 3글자 + 2초 정지) ─────
-    $ auto_type("최악은", cps=SPEED_NORMAL)
+    # ───── 슬라이드 8 (나레이션: Heavy / 연출: 3글자 + 2초 정지) ─────
+    $ auto_type("최악은", cps=SPEED_NORMAL, font=FONT_HEAVY)
     $ renpy.pause(2.0, hard=True)
     $ next_slide()
 
@@ -250,11 +266,15 @@ label start:
     $ auto_type_sentences("이렇게 지워버릴 거였으면 나를 부르지 말았어야지.\n비겁한 작가.", cps=SPEED_NORMAL)
     $ erase_in("", ERASE_FAST)
 
-    # ───── 슬라이드 22~23 (연출: 일러스트 - 추후 에셋, 텍스트는 문장 단위 출력) ─────
-    # TODO: 어두운 무대 + 수직 스포트라이트 + 손 뻗는 남자 일러스트
-    $ output_by_sentence("그는 어둠을 향해 손을 뻗는다.")
+    # ───── 슬라이드 22 (나레이션: Heavy / 연출: 일러스트 서서히 페이드인 + 하단 자막) ─────
+    show pic_01 with Dissolve(2.0)
+    $ output_by_sentence("그는 어둠을 향해 손을 뻗는다.", layout="bottom", font=FONT_HEAVY)
+    hide pic_01 with Dissolve(1.0)
     $ next_slide()
-    $ output_by_sentence("무언가 움켜쥐려는 듯이")
+
+    # ───── 슬라이드 23 (나레이션: Heavy / 연출: 22p 이미지 그대로, 손 클로즈업 - 추후 별도 에셋) ─────
+    # TODO: Pic_01 의 손 부분 클로즈업/강조 버전 에셋
+    $ output_by_sentence("무언가 움켜쥐려는 듯이", font=FONT_HEAVY)
     $ next_slide()
 
     # ───── 슬라이드 24 (연출 없음) ─────
