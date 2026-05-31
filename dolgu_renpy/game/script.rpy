@@ -22,8 +22,6 @@ init python:
     ERASE_FAST = 2.0    # 빠르게
     ERASE_VFAST = 1.0   # 아주 빠르게
 
-    $ quick_menu = False  #하단 옵션 삭제
-
     def play_typing():
         # 단일 타격 (한 글자씩 모드)
         renpy.sound.play(random.choice(_typing_clips))
