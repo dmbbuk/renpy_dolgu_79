@@ -185,25 +185,26 @@ label start:
     $ quick_menu = False  #하단 옵션 삭제
     show screen typewriter_screen("")
 
-    # ───── 슬라이드 2~4 (나레이션: Heavy / 연출: 한 글자씩 → 한 글자씩 삭제, 보통 속도) ─────
+    # ───── 슬라이드 2~4 (나레이션: Heavy / 연출: 한 글자씩 타이핑만, 삭제 없음) ─────
     $ auto_type_sentences("모든 작가는 글을 쓰려는 힘과\n글을 지우려는 힘을 동시에 지니고 있다.", cps=SPEED_NORMAL, font=FONT_HEAVY)
-    $ erase_in("", ERASE_NORMAL, font=FONT_HEAVY)
+    $ next_slide()
     $ auto_type_sentences("대부분의 작가에게는\n지우려는 힘이 더 강하다.", cps=SPEED_NORMAL, font=FONT_HEAVY)
-    $ erase_in("", ERASE_NORMAL, font=FONT_HEAVY)
+    $ next_slide()
     $ auto_type_sentences("그건 자신의 미숙함을 들키지 않는다는\n점에서 최악은 아니다.", cps=SPEED_NORMAL, font=FONT_HEAVY)
-    $ erase_in("", ERASE_NORMAL, font=FONT_HEAVY)
+    $ next_slide()
 
-    # ───── 슬라이드 5~7 (나레이션: Heavy / 연출: 부분 삭제 반복 — "최악은 역시" 유지) ─────
+    # ───── 슬라이드 5~7 (나레이션: Heavy / 연출: 한 문장 + 빠른 부분 삭제 체인) ─────
     $ auto_type_sentences("최악은 역시, 형편없는 작품을\n미처 지우지도 못하고 계속 써내려 가는 것.", cps=SPEED_NORMAL, font=FONT_HEAVY)
-    $ erase_in("최악은 역시", ERASE_NORMAL, font=FONT_HEAVY)
-    $ auto_type_sentences("최악은 역시, 형편없는 작품을\n미처 지우지도", cps=SPEED_NORMAL, font=FONT_HEAVY)
-    $ erase_in("최악은 역시", ERASE_NORMAL, font=FONT_HEAVY)
-    $ auto_type_sentences("최악은 역시, 형편없는 작품", cps=SPEED_NORMAL, font=FONT_HEAVY)
-    $ erase_in("", ERASE_NORMAL, font=FONT_HEAVY)
+    # 빠르게 지우고 (5→6 상태) + 멈췄다가
+    $ erase_in("최악은 역시, 형편없는 작품을\n미처 지우지도", ERASE_FAST, font=FONT_HEAVY)
+    $ renpy.pause(1.5, hard=True)
+    # 빠르게 지웠다가 (6→7 상태) — 멈춤 없이 이어짐
+    $ erase_in("최악은 역시, 형편없는 작품", ERASE_FAST, font=FONT_HEAVY)
+    $ renpy.pause(1.5, hard=True)
 
-    # ───── 슬라이드 8 (나레이션: Heavy / 연출: 3글자 + 2초 정지) ─────
-    $ auto_type("최악은", cps=SPEED_NORMAL, font=FONT_HEAVY)
-    $ renpy.pause(2.0, hard=True)
+    # ───── 슬라이드 8 (5~7에서 이어짐: "최악은"으로 마저 줄임 + 2초 정지) ─────
+    $ erase_in("최악은", ERASE_FAST, font=FONT_HEAVY)
+    $ renpy.pause(2.5, hard=True)
     $ next_slide()
 
     # ───── 슬라이드 9~12 (연출 없음 → 문장 단위 통 출력) ─────
