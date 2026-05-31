@@ -166,6 +166,7 @@ screen typewriter_screen(text, layout="center"):
 
 label start:
     $ current_text = ""
+    $ quick_menu = False  #하단 옵션 삭제
     show screen typewriter_screen("")
 
     # ───── 슬라이드 2~4 (연출: 한 글자씩 → 한 글자씩 삭제, 보통 속도) ─────
