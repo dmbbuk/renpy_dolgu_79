@@ -1,5 +1,6 @@
 init python:
     import random
+    import time
 
     _typing_clips = [
         "audio/typing1.mp3",
@@ -74,27 +75,82 @@ init python:
         return [c for c in chunks if c.strip()]
 
     def auto_type(target, cps=SPEED_NORMAL, sound=True, layout="center", font=FONT_MEDIUM):
-        # 현재 텍스트 → target 으로 한 글자씩 자동 전이 (클릭 없음, 공백 스킵).
-        # 공통 접두사 이후를 뒤에서부터 삭제 → target 의 나머지를 타이핑.
+        # 실제 경과 시간 기반 진행: 매 프레임 elapsed/total_time 비율로 글자 위치 계산.
+        # 함수 오버헤드(show_screen/sound/루프 비용)와 무관하게 총 시간이 의도 시간(total_chars/cps)에 수렴.
+        # 공백은 진행 카운트에서 제외 (시간 비용 없이 즉시 통과).
         cp = _common_prefix_len(store.current_text, target)
-        while len(store.current_text) > cp:
-            removed = store.current_text[-1]
-            store.current_text = store.current_text[:-1]
+        erase_non_space = sum(1 for c in store.current_text[cp:] if c != " ")
+        add_non_space = sum(1 for c in target[cp:] if c != " ")
+        total_chars = erase_non_space + add_non_space
+        if total_chars <= 0:
+            if store.current_text != target:
+                store.current_text = target
+                renpy.show_screen("typewriter_screen", store.current_text, layout=layout, font=font)
+            return
+        total_time = total_chars / float(cps)
+        FRAME_DT = 1.0 / 60.0
+        SOUND_MIN_INTERVAL = 0.04
+
+        start_t = time.time()
+        chars_done = 0
+        last_sound_t = start_t - 1.0
+
+        while chars_done < total_chars:
+            elapsed = time.time() - start_t
+            progress = min(1.0, elapsed / total_time)
+            target_done = int(round(total_chars * progress))
+
+            changed = False
+            played_sound = False
+            while chars_done < target_done:
+                # Erase 단계
+                if chars_done < erase_non_space:
+                    advanced = False
+                    while len(store.current_text) > cp:
+                        removed = store.current_text[-1]
+                        store.current_text = store.current_text[:-1]
+                        changed = True
+                        if removed != " ":
+                            chars_done += 1
+                            advanced = True
+                            if not played_sound and sound:
+                                now = time.time()
+                                if now - last_sound_t > SOUND_MIN_INTERVAL:
+                                    play_typing()
+                                    last_sound_t = now
+                                    played_sound = True
+                            break
+                    if not advanced:
+                        break
+                # Add 단계
+                else:
+                    advanced = False
+                    while len(store.current_text) < len(target):
+                        next_c = target[len(store.current_text)]
+                        store.current_text = target[: len(store.current_text) + 1]
+                        changed = True
+                        if next_c != " ":
+                            chars_done += 1
+                            advanced = True
+                            if not played_sound and sound:
+                                now = time.time()
+                                if now - last_sound_t > SOUND_MIN_INTERVAL:
+                                    play_typing()
+                                    last_sound_t = now
+                                    played_sound = True
+                            break
+                    if not advanced:
+                        break
+
+            if changed:
+                renpy.show_screen("typewriter_screen", store.current_text, layout=layout, font=font)
+            if chars_done < total_chars:
+                renpy.pause(FRAME_DT, hard=True)
+
+        # 최종 상태 보장 (잔여 공백 정리 등)
+        if store.current_text != target:
+            store.current_text = target
             renpy.show_screen("typewriter_screen", store.current_text, layout=layout, font=font)
-            if removed == " ":
-                continue
-            if sound:
-                play_typing()
-            renpy.pause(1.0 / cps, hard=True)
-        while len(store.current_text) < len(target):
-            next_c = target[len(store.current_text)]
-            store.current_text = target[: len(store.current_text) + 1]
-            renpy.show_screen("typewriter_screen", store.current_text, layout=layout, font=font)
-            if next_c == " ":
-                continue
-            if sound:
-                play_typing()
-            renpy.pause(1.0 / cps, hard=True)
 
     def auto_type_sentences(target, cps=SPEED_NORMAL, sound=True, layout="center", font=FONT_MEDIUM):
         # target 으로 자동 전이 + 추가되는 텍스트를 마침표 단위로 끊어 청크 끝마다 클릭 대기.
@@ -185,6 +241,20 @@ label start:
     $ quick_menu = False  #하단 옵션 삭제
     show screen typewriter_screen("")
 
+    # ───── [시나리오 작성자 참고용] 삭제 속도 데모 ─────
+    # 각 라인을 타이핑 후 표시된 N초 동안 삭제 → 다음 데모로 자동 이어짐.
+    # 본 시나리오 작업 시 erase_in(target, N) 의 N 값 감각 비교용.
+    $ auto_type_sentences("텍스트를 0.25초 안에 지울 예정입니다.", cps=SPEED_NORMAL)
+    $ erase_in("", 0.25)
+    $ auto_type_sentences("텍스트를 0.5초 안에 지울 예정입니다.", cps=SPEED_NORMAL)
+    $ erase_in("", 0.5)
+    $ auto_type_sentences("텍스트를 0.75초 안에 지울 예정입니다.", cps=SPEED_NORMAL)
+    $ erase_in("", 0.75)
+    $ auto_type_sentences("텍스트를 1초 안에 지울 예정입니다.", cps=SPEED_NORMAL)
+    $ erase_in("", 1.0)
+    $ auto_type_sentences("텍스트를 2초 안에 지울 예정입니다.", cps=SPEED_NORMAL)
+    $ erase_in("", 2.0)
+
     # ───── 슬라이드 2~4 (나레이션: Heavy / 연출: 한 글자씩 타이핑만, 삭제 없음) ─────
     $ auto_type_sentences("모든 작가는 글을 쓰려는 힘과\n글을 지우려는 힘을 동시에 지니고 있다.", cps=SPEED_NORMAL, font=FONT_HEAVY)
     $ next_slide()
@@ -203,7 +273,7 @@ label start:
     $ renpy.pause(1.5, hard=True)
 
     # ───── 슬라이드 8 (5~7에서 이어짐: "최악은"으로 마저 줄임 + 2초 정지) ─────
-    $ erase_in("최악은", ERASE_FAST, font=FONT_HEAVY)
+    $ erase_in("최악", ERASE_FAST, font=FONT_HEAVY)
     $ renpy.pause(2.5, hard=True)
     $ next_slide()
 
