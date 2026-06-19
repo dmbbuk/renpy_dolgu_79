@@ -17,6 +17,11 @@ init python:
     # 사운드 솎아내기: N글자마다 1번 재생 (1 = 매 글자, 2 = 2글자마다)
     SOUND_EVERY = 2
 
+    # 타이핑 중 멈춤(소리 없음) — 언더테일식 리듬
+    SPACE_PAUSE = 0.04       # 스페이스: 거의 안 느껴지는 짧은 숨
+    PUNCT_PAUSE = 0.15       # , . ? ! … : 또렷한 멈춤
+    PUNCT_CHARS = ",.?!…"    # ('...' 처럼 점 3개면 자동으로 3배 멈춤)
+
     # 삭제 총 시간(초). erase_in(target, seconds) 의 seconds 인자로 직접 사용.
     ERASE_NORMAL = 3.0  # 보통
     ERASE_FAST = 2.0    # 빠르게
@@ -156,6 +161,26 @@ init python:
             store.current_text = target
             renpy.show_screen("typewriter_screen", store.current_text, layout=layout, font=font)
 
+    def type_in(target, cps=SPEED_NORMAL, sound=True, layout="center", font=FONT_MEDIUM):
+        # 언더테일식 타이핑(추가 전용). current_text 는 target 의 접두사 가정.
+        # 스페이스/구두점은 소리 없이 멈춤, 나머지는 SOUND_EVERY 글자마다 클릭.
+        per_char = 1.0 / float(cps)
+        sound_counter = 0
+        while len(store.current_text) < len(target):
+            c = target[len(store.current_text)]
+            store.current_text = target[: len(store.current_text) + 1]
+            renpy.show_screen("typewriter_screen", store.current_text, layout=layout, font=font)
+            if c == " ":
+                renpy.pause(SPACE_PAUSE, hard=True)
+            elif c in PUNCT_CHARS:
+                renpy.pause(PUNCT_PAUSE, hard=True)
+            else:
+                if sound:
+                    sound_counter += 1
+                    if (sound_counter - 1) % SOUND_EVERY == 0:
+                        play_typing()
+                renpy.pause(per_char, hard=True)
+
     def auto_type_sentences(target, cps=SPEED_NORMAL, sound=True, layout="center", font=FONT_MEDIUM):
         # target 으로 자동 전이 + 추가되는 텍스트를 마침표 단위로 끊어 청크 끝마다 클릭 대기.
         cp = _common_prefix_len(store.current_text, target)
@@ -168,7 +193,7 @@ init python:
         accumulated = store.current_text
         for chunk in chunks:
             accumulated += chunk
-            auto_type(accumulated, cps=cps, sound=sound, layout=layout, font=font)
+            type_in(accumulated, cps=cps, sound=sound, layout=layout, font=font)
             renpy.pause()
 
     def erase_in(target, seconds, sound=True, layout="center", font=FONT_MEDIUM):
