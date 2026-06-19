@@ -3,11 +3,7 @@ init python:
     import time
 
     _typing_clips = [
-        "audio/typing1.mp3",
-        "audio/typing2.mp3",
-        "audio/typing3.mp3",
-        "audio/typing4.mp3",
-        "audio/typing5.mp3",
+        "audio/button_click_03.wav",
     ]
 
     # ─ 속도 프리셋 ─
@@ -17,6 +13,9 @@ init python:
     SPEED_VFAST = 30    # 아주 빠르게 ≈ 1초
     # 슬라이드 19(200자+) 전용 — 사용자 지시 "3배 더 빠르게" (원본 40 cps → 120)
     SPEED_RAPID = 120
+
+    # 사운드 솎아내기: N글자마다 1번 재생 (1 = 매 글자, 2 = 2글자마다)
+    SOUND_EVERY = 2
 
     # 삭제 총 시간(초). erase_in(target, seconds) 의 seconds 인자로 직접 사용.
     ERASE_NORMAL = 3.0  # 보통
@@ -93,6 +92,7 @@ init python:
 
         start_t = time.time()
         chars_done = 0
+        sound_counter = 0
         last_sound_t = start_t - 1.0
 
         while chars_done < total_chars:
@@ -113,11 +113,13 @@ init python:
                         if removed != " ":
                             chars_done += 1
                             advanced = True
-                            if not played_sound and sound:
-                                now = time.time()
-                                if now - last_sound_t > SOUND_MIN_INTERVAL:
+                            if sound:
+                                sound_counter += 1
+                                if ((sound_counter - 1) % SOUND_EVERY == 0
+                                        and not played_sound
+                                        and time.time() - last_sound_t > SOUND_MIN_INTERVAL):
                                     play_typing()
-                                    last_sound_t = now
+                                    last_sound_t = time.time()
                                     played_sound = True
                             break
                     if not advanced:
@@ -132,11 +134,13 @@ init python:
                         if next_c != " ":
                             chars_done += 1
                             advanced = True
-                            if not played_sound and sound:
-                                now = time.time()
-                                if now - last_sound_t > SOUND_MIN_INTERVAL:
+                            if sound:
+                                sound_counter += 1
+                                if ((sound_counter - 1) % SOUND_EVERY == 0
+                                        and not played_sound
+                                        and time.time() - last_sound_t > SOUND_MIN_INTERVAL):
                                     play_typing()
-                                    last_sound_t = now
+                                    last_sound_t = time.time()
                                     played_sound = True
                             break
                     if not advanced:
@@ -180,15 +184,13 @@ init python:
         auto_type(target, cps=cps, sound=sound, layout=layout, font=font)
 
     def output_by_sentence(text, layout="center", font=FONT_MEDIUM):
-        # "연출 없음" 슬라이드용. 마침표 단위 청크 통째로 출력 + 버스트 사운드.
+        # "연출 없음" 슬라이드용. 마침표 단위 청크 통째로 출력 (무음 — 버스트 사운드 보류, 연출 추후 변경).
         chunks = _split_chunks(text)
         accumulated = store.current_text
         for chunk in chunks:
             accumulated += chunk
             store.current_text = accumulated
             renpy.show_screen("typewriter_screen", store.current_text, layout=layout, font=font)
-            burst_count = max(3, min(len(chunk) // 4, 10))
-            play_typing_burst(burst_count)
             renpy.pause()
 
     def next_slide():
